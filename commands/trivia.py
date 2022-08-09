@@ -27,10 +27,12 @@ class trivia(commands.Cog):
     
     @commands.slash_command()
     async def trivia(self, inter, question: int = None):
-        key = (inter.member.id, inter.guild.id)
+        
+        key = (inter.guild.id, inter.user.id)
         if key in self.game:
             await inter.response.send_message("You have a game!", ephemeral = True)
         else:
+            await inter.response.defer()
             dbURL = os.environ['dbURL']
             
             db = await asyncpg.connect(dsn = dbURL)
@@ -67,43 +69,42 @@ class trivia(commands.Cog):
                 description = data[0]['question']
                     
                 )
-            await inter.response.send_message(embed = embed, components = components)
+            await inter.edit_original_message(embed = embed, components = components)
             await db.close()
             
         
     @commands.Cog.listener("on_button_click")
     async def triviab(self, inter):
-        key = (inter.guild.id, inter.member.id)
-        if key in self.game:
-            await inter.response.send_message("You have a game going.", ephemeral = True)
-        else:
-            gs = self.game[key]
-            dbURL = os.environ['dbURL']
+        await inter.response.defer()
+        key = (inter.guild.id, inter.user.id)
+        gs = self.game[key]
+        dbURL = os.environ['dbURL']
     
-            db = await asyncpg.connect(dsn = dbURL)
+        db = await asyncpg.connect(dsn = dbURL)
             
-            data = await db.fetch(f'SELECT * FROM trivia WHERE key=(SELECT max(key) FROM trivia);')
+        data = await db.fetch(f'SELECT * FROM trivia WHERE key=(SELECT max(key) FROM trivia);')
             
-            if inter.author == inter.message.interaction.user:
-                embed = disnake.Embed()
-                if inter.component.custom_id == "right":
-                    print("right")
-                    embed.title = "Correct!"
-                    embed.description = gs
-                    embed.colour = disnake.Colour.green()
-                    await inter.response.edit_message(
-                        embed = embed, components = None
-                        )
-                elif inter.component.custom_id != "right":
-                    print("right")
-                    embed.title = "Wrong!"
-                    embed.description = f"The right answer was {gs}."
-                    embed.colour = disnake.Colour.red()
-                    await inter.response.edit_message(
-                        embed = embed, components = None
-                        )
-            else:
-                await inter.response.send_message("This isn't your question.", ephemeral = True)
+        if inter.author == inter.message.interaction.user:
+            embed = disnake.Embed()
+            if inter.component.custom_id == "right":
+                print("right")
+                embed.title = "Correct!"
+                embed.description = gs.response
+                embed.colour = disnake.Colour.green()
+                await inter.edit_original_message(
+                    embed = embed, components = None
+                    )
+            elif inter.component.custom_id != "right":
+                print("right")
+                embed.title = "Wrong!"
+                embed.description = f"The right answer was {gs.correct}. {gs.response}"
+                embed.colour = disnake.Colour.red()
+                await inter.edit_original_message(
+                    embed = embed, components = None
+                    )
+        else:
+            await inter.edit_original_message("This isn't your question.", ephemeral = True)
+        del self.game[key]
 
 
 def setup(bot):
