@@ -7,4 +7,4 @@ A bot for the Cross Server Bot Jam August 2nd - August 9th, 2022
 ## Developers
 [Player1041](https://github.com/Player1041) <br>
 [KortaPo](https://github.com/KortaPo) <br>
-[ag_hogwartsalumni](https://github.com/ag_hogwarts) <br>
+[ag_hogwartsalumni](https://github.com/aghogwarts) <br>
